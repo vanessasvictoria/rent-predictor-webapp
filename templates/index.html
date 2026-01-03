@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rent Predictor</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>Rent Predictor</h1>
+    <p class="sub">FastAPI demo: train (if needed) → predict rent (CHF/month).</p>
+
+    <div class="card">
+      <h2>1) Ensure model exists</h2>
+      <button id="trainBtn">Train / Load Model</button>
+      <p id="trainStatus" class="muted">Model file present: <strong>{{ "yes" if model_ready else "no" }}</strong></p>
+    </div>
+
+    <div class="card">
+      <h2>2) Predict</h2>
+      <form id="form">
+        <div class="grid">
+          <label>Size (m²)<input name="size_m2" type="number" step="1" value="60" required></label>
+          <label>Rooms<input name="rooms" type="number" step="0.5" value="2" required></label>
+          <label>ZIP Code<input name="zip_code" type="number" step="1" value="4051" required></label>
+          <label>Area<input name="area" type="text" value="Grossbasel" required></label>
+
+          <label>Balcony (0/1)<input name="balcony" type="number" min="0" max="1" value="1" required></label>
+          <label>Elevator (0/1)<input name="elevator" type="number" min="0" max="1" value="1" required></label>
+          <label>Furnished (0/1)<input name="furnished" type="number" min="0" max="1" value="0" required></label>
+        </div>
+
+        <button type="submit">Predict rent</button>
+      </form>
+
+      <div id="result" class="result"></div>
+    </div>
+
+    <footer class="muted">
+      Repo demo app — clean pipeline, reproducible structure.
+    </footer>
+  </main>
+
+<script>
+  const trainBtn = document.getElementById("trainBtn");
+  const trainStatus = document.getElementById("trainStatus");
+  const form = document.getElementById("form");
+  const result = document.getElementById("result");
+
+  trainBtn.addEventListener("click", async () => {
+    trainStatus.textContent = "Training/loading model...";
+    const res = await fetch("/train", { method: "POST" });
+    const data = await res.json();
+    trainStatus.textContent = `Model ready: ${data.model_saved}`;
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    result.textContent = "Predicting...";
+
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+
+    // Cast numeric fields
+    payload.size_m2 = Number(payload.size_m2);
+    payload.rooms = Number(payload.rooms);
+    payload.zip_code = Number(payload.zip_code);
+    payload.balcony = Number(payload.balcony);
+    payload.elevator = Number(payload.elevator);
+    payload.furnished = Number(payload.furnished);
+
+    const res = await fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    result.innerHTML = `<strong>Predicted rent:</strong> ${data.predicted_price_chf} CHF / month`;
+  });
+</script>
+</body>
+</html>
