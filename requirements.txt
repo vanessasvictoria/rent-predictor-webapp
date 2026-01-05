@@ -1,8 +1,8 @@
 fastapi
 uvicorn[standard]
 pandas
-scikit-learn==X.Y.Z
-joblib==A.B.C
+scikit-learn==1.5.2
+joblib==1.4.2
 numpy==M.N.P
 jinja2
 python-multipart
